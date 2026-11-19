@@ -1,0 +1,76 @@
+plugins {
+    id 'fabric-loom' version '1.13.4'
+    id 'maven-publish'
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    mavenCentral()
+    // Modrinth maven (used for the optional EMI integration).
+    exclusiveContent {
+        forRepository {
+            maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' }
+        }
+        filter { includeGroup 'maven.modrinth' }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${project.fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+    inputs.property 'version', project.version
+
+    filesMatching('fabric.mod.json') {
+        expand version: project.version
+    }
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+    it.options.encoding = 'UTF-8'
+}
+
+jar {
+    from('LICENSE.txt')
+}
+
+// Development only source set: boots GuiGraphics through the Fabric Knot class loader to check that
+// the mixin really applies, without launching a window. Run with `gradlew mixinAudit`.
+sourceSets {
+    audit {
+        java.srcDir 'src/audit/java'
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
+tasks.register('mixinAudit', JavaExec) {
+    dependsOn tasks.named('classes'), tasks.named('auditClasses'), tasks.named('configureClientLaunch')
+    mainClass = 'meow.binary.o123456789.audit.MixinAudit'
+    // Everything is wired lazily so the launch arg files written by configureClientLaunch exist.
+    doFirst {
+        def clientRun = tasks.named('runClient', JavaExec).get()
+        classpath = clientRun.classpath + sourceSets.audit.output
+        def devModPaths = [sourceSets.main.output.resourcesDir.absolutePath, sourceSets.main.output.classesDirs.asPath].join(File.pathSeparator)
+        jvmArgs = clientRun.jvmArgs + ["-Dfabric.addMods=${devModPaths}".toString()]
+        environment = clientRun.environment
+    }
+}

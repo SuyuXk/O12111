@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "o123456789",
+  "version": "${version}",
+  "name": "O123456789",
+  "description": "Changes the item count numbers in inventories to the 3x5 pixel font used by Create.",
+  "authors": [
+    "catboybinary"
+  ],
+  "contact": {
+    "homepage": "https://github.com/catboybinary/O123456789",
+    "sources": "https://github.com/catboybinary/O123456789"
+  },
+  "license": "GPL-3.0",
+  "icon": "assets/o123456789/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "meow.binary.o123456789.fabric.O123456789Fabric"
+    ],
+    "client": [
+      "meow.binary.o123456789.fabric.client.O123456789FabricClient"
+    ]
+  },
+  "mixins": [
+    "o123456789.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "1.21.11",
+    "java": ">=21"
+  },
+  "suggests": {
+    "fabric-api": "*"
+  }
+}
